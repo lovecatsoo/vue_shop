@@ -1,24 +1,29 @@
-const mongoose = require("mongoose");
-const Schema = mongoose.Schema;
+const mongoose = require('mongoose')
+mongoose.set('useFindAndModify', false)
+const Schema = mongoose.Schema
 
 // Creat Schema
 const UserSchema = new Schema({
-  name:{
+  name: {
     type: String,
     require: true
   },
-  email:{
+  email: {
     type: String,
     require: true
   },
-  password:{
+  password: {
     type: String,
     require: true
   },
-  date:{
+  status: {
+    type: Boolean,
+    require: true
+  },
+  date: {
     type: Date,
     default: Date.now
   }
 })
 
-module.exports = User = mongoose.model("users",UserSchema);
+module.exports = mongoose.model('users', UserSchema)
