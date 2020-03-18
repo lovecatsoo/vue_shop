@@ -85,7 +85,7 @@ export default {
         .el-container{
             height: 100%;
             .el-main{
-              padding-top: 0px;
+              padding-top: 20px;
             }
         }
         .el-header{

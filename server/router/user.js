@@ -69,6 +69,19 @@ router.post('/register', (req, res) => {
       }
     })
 })
+// 根据id查询用户
+router.get('/user/:id', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  let id = req.params.id
+  User.findById(id).then(user => {
+    let obj = {}
+    obj.name = user.name
+    obj.email = user.email
+    res.send({ status: 200, msg: '查询成功', data: obj })
+  })
+    .catch(err => {
+      console.log(err)
+    })
+})
 // 获取用户列表
 router.get('/userlist', passport.authenticate('jwt', { session: false }), async (req, res) => {
   let { query, pageNum, pageSize } = req.query
@@ -98,12 +111,81 @@ router.get('/userlist', passport.authenticate('jwt', { session: false }), async 
       res.send({ meta: { msg: '获取用户列表失败', status: 400 } })
     })
 })
+// 修改用户状态
 router.put('/statusChange', (req, res) => {
   let { email, status } = req.body
   User.findOneAndUpdate({ email }, { $set: { status } })
     .then(doc => {
       res.send({ status: 200, msg: '修改成功', user: doc })
     })
+    .catch(err => {
+      console.log(err)
+    })
+})
+// 添加用户
+router.post('/users', (req, res) => {
+  // 先看一下邮箱里面是否存在这个账号
+  User.findOne({ email: req.body.email })
+    .then((user) => {
+      if (user) {
+        res.send({ status: 400, msg: '该邮箱已经被注册' })
+      } else {
+        console.log(req.body)
+        let obj = {
+          name: req.body.params.username,
+          email: req.body.params.email,
+          password: req.body.params.password,
+          status: false
+        }
+
+        let newUser = new User(obj)
+
+        bcrypt.genSalt(10, function (err, salt) {
+          if (err) throw err
+          bcrypt.hash(newUser.password, salt, function (err, hash) {
+            if (err) throw err
+            newUser.password = hash
+            newUser.save()
+              .then(user => {
+                res.send({ status: 200, msg: '添加成功', user })
+              })
+              .catch(err => {
+                console.log(err)
+              })
+          })
+        })
+      }
+    })
+})
+// 修改用户信息
+router.post('/edit', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  let { id, email, originEmail } = req.body
+  if (originEmail === email) {
+    res.send({ msg: '修改成功', status: 200 })
+  } else {
+    let user = await User.findOne({ email })
+    if (!user) {
+      let raw = await User.where({ _id: id }).update({ email })
+      res.send({ msg: '修改成功', status: 200 })
+    } else {
+      res.send({ msg: '邮箱已存在', status: 400 })
+    }
+  }
+  // User.where({ _id: id }).updateOne({ email })
+  //   .then(user => {
+  //     res.send({ msg: '修改成功', status: 200 })
+  //   })
+  //   .catch(err => {
+  //     console.log(err)
+  //   })
+})
+// 删除用户
+router.post('/deleteUser', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  let { id } = req.body
+
+  User.deleteOne({ _id: id }).then(raw => {
+    res.send({ msg: '删除成功', status: 200 })
+  })
     .catch(err => {
       console.log(err)
     })
@@ -127,4 +209,5 @@ function checkQuery (str) {
     return false
   }
 }
+
 module.exports = router
